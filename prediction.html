@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Prediction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h2 {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.5);
+        }
+
+        .prediction-btn {
+            background: linear-gradient(135deg, #27ae60, #219150);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .sars-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-white">Transaction Prediction</h1>
+            <button class="card px-6 py-2 back-btn text-white" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+        </header>
+
+        <!-- Transaction Selection Card -->
+        <div class="card p-6 mb-8">
+            <h2>Select Transaction</h2>
+            <select id="transactionSelect" class="form-input">
+                <option value="">Select a Transaction</option>
+            </select>
+            <button onclick="loadTransactionDetails()" class="prediction-btn">
+                <i class="fas fa-search"></i> Load Transaction
+            </button>
+        </div>
+
+        <!-- Prediction Form Card -->
+        <div class="card p-6">
+            <h2>Transaction Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="payment_currency" placeholder="Payment Currency" class="form-input" readonly>
+                <input type="text" id="received_currency" placeholder="Received Currency" class="form-input" readonly>
+                <input type="text" id="sender_bank_location" placeholder="Sender Bank Location" class="form-input" readonly>
+                <input type="text" id="receiver_bank_location" placeholder="Receiver Bank Location" class="form-input" readonly>
+                <input type="text" id="payment_type" placeholder="Payment Type" class="form-input" readonly>
+                <input type="number" id="amount" placeholder="Amount" class="form-input" readonly>
+            </div>
+            
+            <div class="mt-6">
+                <button onclick="predictTransaction()" class="prediction-btn">
+                    <i class="fas fa-brain"></i> Predict Transaction
+                </button>
+                
+                <div id="predictionResult" class="mt-4 text-white text-lg font-bold p-4 rounded-lg" style="display: none;">
+                    Prediction Result: <span class="ml-2"></span>
+                </div>
+                
+                <button id="generateReport" class="sars-btn text-white px-6 py-2 rounded-lg mt-4 hidden">
+                    <i class="fas fa-file-pdf"></i> Generate SARS Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚀 Load Transactions into Dropdown
+        async function loadTransactions() {
+            try {
+                const response = await fetch("http://localhost:5000/transactions");
+                const transactions = await response.json();
+                
+                const select = document.getElementById("transactionSelect");
+                select.innerHTML = `<option value="">Select a Transaction</option>`;
+
+                transactions.forEach(transaction => {
+                    const option = document.createElement("option");
+                    option.value = transaction._id;
+                    option.textContent = `${transaction.sender_name} → ${transaction.receiver_name} ($${transaction.amount})`;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Error loading transactions:", error);
+            }
+        }
+
+        // 📝 Load Transaction Details into Form
+        async function loadTransactionDetails() {
+            const selectedTransactionId = document.getElementById("transactionSelect").value;
+            if (!selectedTransactionId) {
+                alert("Please select a transaction.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/transaction/${selectedTransactionId}`);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch transaction details.");
+                }
+                const transaction = await response.json();
+
+                document.getElementById("payment_currency").value = transaction.payment_currency || "";
+                document.getElementById("received_currency").value = transaction.received_currency || "";
+                document.getElementById("sender_bank_location").value = transaction.sender_bank_location || "";
+                document.getElementById("receiver_bank_location").value = transaction.receiver_bank_location || "";
+                document.getElementById("payment_type").value = transaction.payment_type || "";
+                document.getElementById("amount").value = transaction.amount || "";
+
+            } catch (error) {
+                console.error("Error loading transaction details:", error);
+                alert("Error: " + error.message);
+            }
+        }
+
+        // 🤖 Predict Transaction Status using ML Model
+        async function predictTransaction() {
+            const selectedTransactionId = document.getElementById("transactionSelect").value;
+            if (!selectedTransactionId) {
+                alert("Please select a transaction to predict.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/predict-laundering/${selectedTransactionId}`, { method: "POST" });
+                if (!response.ok) {
+                    throw new Error("Prediction failed.");
+                }
+
+                const result = await response.json();
+                const resultElement = document.getElementById("predictionResult");
+                resultElement.style.display = "block";
+                
+                if (result.status === "Laundering") {
+                    resultElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Prediction: <span class="text-red-400">${result.status}</span>`;
+                    document.getElementById("generateReport").classList.remove("hidden");
+                } else {
+                    resultElement.innerHTML = `<i class="fas fa-check-circle"></i> Prediction: <span class="text-green-400">${result.status}</span>`;
+                    document.getElementById("generateReport").classList.add("hidden");
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Error: " + error.message);
+            }
+        }
+
+        // ⬅️ Go Back to Dashboard
+        function goBack() {
+            window.location.href = "admin.html";
+        }
+
+        // 🎯 Load transactions on page load
+        document.addEventListener("DOMContentLoaded", loadTransactions);
+    </script>
+
+</body>
+</html>

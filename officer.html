@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-white">Officer Dashboard</h1>
+            <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onclick="logout()">Logout</button>
+        </header>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Transaction Flow (Sankey Diagram)</h2>
+                <div id="sankeyChart"></div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Risk Locations (Heatmap)</h2>
+                <canvas id="heatmapChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Laundering Trends (Time-Series)</h2>
+                <canvas id="trendChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Payment Types (Pie Chart)</h2>
+                <canvas id="paymentPieChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Transactions</h2>
+            <table id="transactionTable" class="w-full">
+                <thead>
+                    <tr class="bg-blue-500 text-white">
+                        <th class="p-3">ID</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Sender</th>
+                        <th class="p-3">Receiver</th>
+                        <th class="p-3">Amount</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3">SARS Report</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchTransactions() {
+            try {
+                const response = await fetch('http://localhost:5000/transactions');
+                const data = await response.json();
+                const tbody = document.querySelector('#transactionTable tbody');
+                tbody.innerHTML = '';
+
+                data.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-3">${transaction._id}</td>
+                        <td class="p-3">${transaction.transaction_date}</td>
+                        <td class="p-3">${transaction.sender_name}</td>
+                        <td class="p-3">${transaction.receiver_name}</td>
+                        <td class="p-3">$${transaction.amount.toLocaleString()}</td>
+                        <td class="p-3">${transaction.status || 'Unknown'}</td>
+                        <td class="p-3">
+                            <button onclick="generateSARSReport('${transaction._id}')" class="bg-red-500 text-white px-3 py-1 rounded">Generate</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        }
+
+        async function generateSARSReport(transactionId) {
+            try {
+                const response = await fetch(`http://localhost:5000/sars-report/${transactionId}`);
+                const data = await response.json();
+                if (response.ok) {
+                    const a = document.createElement("a");
+                    a.href = `data:application/pdf;base64,${data.pdf}`;
+                    a.download = `SARS_Report_${transactionId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    alert("Failed to generate SARS report.");
+                }
+            } catch (error) {
+                console.error("Error generating SARS report:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchTransactions);
+    </script>
+</body>
+</html>

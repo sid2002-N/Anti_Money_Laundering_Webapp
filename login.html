@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Auth Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .wrapper {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            perspective: 1000px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            width: 340px; /* Reduced width */
+            transform-style: preserve-3d;
+            transition: transform 0.4s, box-shadow 0.4s;
+        }
+
+        .container:hover {
+            transform: translateZ(20px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        h2 {
+            color: #fff;
+            font-size: 1.8rem; /* Slightly smaller */
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.2rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.9rem 0.9rem 0.9rem 2.8rem; /* Adjusted padding */
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 0.95rem; /* Slightly smaller */
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.5);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #27ae60, #219150);
+            color: #fff;
+            font-size: 1rem; /* Slightly smaller */
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .switch-text {
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.9rem;
+        }
+
+        .switch-text a {
+            color: #27ae60;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .switch-text a:hover {
+            color: #2ecc71;
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .wrapper {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Login Form -->
+        <div class="container">
+            <h2>Welcome Back</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <i class="fas fa-envelope icon"></i>
+                    <input type="email" id="loginEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock icon"></i>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                </div>
+                <div class="error-message" id="loginError"></div>
+                <button type="submit">Login <i class="fas fa-arrow-right"></i></button>
+                <p class="switch-text">New here? <a href="#" onclick="toggleForms()">Create Account</a></p>
+            </form>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="container" style="display: none;">
+            <h2>Get Started</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <i class="fas fa-user icon"></i>
+                    <input type="text" id="signupUsername" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-envelope icon"></i>
+                    <input type="email" id="signupEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock icon"></i>
+                    <input type="password" id="signupPassword" placeholder="Password" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-user-tag icon"></i>
+                    <select id="signupRole">
+                        <option value="officer">Officer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="error-message" id="signupError"></div>
+                <button type="submit">Sign Up <i class="fas fa-user-plus"></i></button>
+                <p class="switch-text">Already have an account? <a href="#" onclick="toggleForms()">Login</a></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Toggle between forms
+        function toggleForms() {
+            const containers = document.querySelectorAll('.container');
+            containers.forEach(container => {
+                container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            });
+        }
+
+        // Error handler
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => errorElement.style.display = 'none', 3000);
+        }
+
+        // Login handler
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('http://localhost:5000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    window.location.href = data.role === 'admin' ? 'admin.html' : 'officer.html';
+                } else {
+                    showError('loginError', data.message || 'Login failed');
+                }
+            } catch (error) {
+                showError('loginError', 'Failed to connect to server');
+                console.error('Login error:', error);
+            }
+        });
+
+        // Signup handler
+        document.getElementById('signupForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const role = document.getElementById('signupRole').value;
+
+            try {
+                const response = await fetch('http://localhost:5000/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, role })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(data.message);
+                    document.getElementById('signupForm').reset();
+                    toggleForms(); // Switch to login form
+                } else {
+                    showError('signupError', data.message || 'Signup failed');
+                }
+            } catch (error) {
+                showError('signupError', 'Failed to connect to server');
+                console.error('Signup error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

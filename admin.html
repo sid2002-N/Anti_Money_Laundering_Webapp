@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h2 {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .card th, .card td {
+            padding: 12px;
+            text-align: left;
+            color: #fff;
+        }
+
+        .card th {
+            background: rgba(255, 255, 255, 0.15);
+            font-weight: 500;
+        }
+
+        .card tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+        }
+
+        .logout-btn:hover {
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .refresh-btn:hover {
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .prediction-btn {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .prediction-btn:hover {
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8 animate__animated animate__fadeInDown">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Admin Dashboard</h1>
+                <p class="text-sm text-gray-300" id="currentDateTime"></p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="card px-6 py-2 refresh-btn" onclick="fetchTransactions()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="card px-6 py-2 prediction-btn" onclick="redirectToPrediction()">
+                    <i class="fas fa-chart-line"></i> Prediction
+                </button>
+                <button class="card px-6 py-2 logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card p-6 text-center">
+                <h3>Total Transactions</h3>
+                <p id="totalTransactions" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="card p-6 text-center">
+                <h3>Pending Transactions</h3>
+                <p id="pendingTransactions" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="card p-6 text-center">
+                <h3>Completed Transactions</h3>
+                <p id="completedTransactions" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="card p-6 text-center">
+                <h3>Total Amount</h3>
+                <p id="totalAmount" class="text-2xl font-bold">$0</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Pie Chart -->
+            <div class="card p-6">
+                <h2>Transaction Status Distribution</h2>
+                <canvas id="transactionPieChart"></canvas>
+            </div>
+
+            <div class="card p-6">
+                <h2>Currency Distribution</h2>
+                <canvas id="currencyBarChart"></canvas>
+            </div>
+
+            
+
+            <!-- Line Chart -->
+            <div class="card p-6">
+                <h2>Transactions Over Time</h2>
+                <canvas id="transactionsLineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="card p-6">
+            <h2>Recent Transactions</h2>
+            <table id="transactionTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Sender</th>
+                        <th>Receiver</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Transactions will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allTransactions = [];
+
+        // Fetch transactions from the backend
+        async function fetchTransactions() {
+            try {
+                const response = await fetch('http://localhost:5000/transactions');
+                if (!response.ok) throw new Error('Failed to fetch data');
+                
+                const data = await response.json();
+                allTransactions = data;
+
+                // Update stats
+                document.getElementById('totalTransactions').textContent = allTransactions.length;
+                document.getElementById('pendingTransactions').textContent = allTransactions.filter(t => t.status === 'Pending').length;
+                document.getElementById('completedTransactions').textContent = allTransactions.filter(t => t.status === 'Completed').length;
+                document.getElementById('totalAmount').textContent = `$${allTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}`;
+
+                // Render charts
+                renderCharts(allTransactions);
+
+                // Render table
+                renderTable();
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        }
+
+        // Render the transactions table
+        function renderTable() {
+            const tbody = document.querySelector('#transactionTable tbody');
+            tbody.innerHTML = '';
+
+            allTransactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-3">${transaction._id}</td>
+                    <td class="p-3">${transaction.transaction_date}</td>
+                    <td class="p-3">${transaction.sender_name}</td>
+                    <td class="p-3">${transaction.receiver_name}</td>
+                    <td class="p-3">$${transaction.amount.toLocaleString()}</td>
+                    <td class="p-3">${transaction.status || 'Unknown'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Render charts
+        function renderCharts(transactions) {
+    // Pie Chart: Laundering vs Non-Laundering
+    const launderingCounts = {
+        Laundering: transactions.filter(t => t.status === 'Laundering').length,
+        'Not Laundering': transactions.filter(t => t.status !== 'Laundering').length,
+    };
+
+    new Chart(document.getElementById('transactionPieChart'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(launderingCounts),
+            datasets: [{
+                data: Object.values(launderingCounts),
+                backgroundColor: ['#ff6384', '#36a2eb'],
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                    }
+                }
+            }
+        }
+    });
+
+    // Currency Bar Chart
+    const currencyCounts = transactions.reduce((acc, transaction) => {
+        const currency = transaction.payment_currency || 'Unknown';
+        acc[currency] = (acc[currency] || 0) + 1;
+        return acc;
+    }, {});
+
+    new Chart(document.getElementById('currencyBarChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(currencyCounts),
+            datasets: [{
+                label: 'Transaction Count',
+                data: Object.values(currencyCounts),
+                backgroundColor: '#4CAF50',
+                borderColor: '#388E3C',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    ticks: {
+                        color: '#fff',
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    ticks: {
+                        color: '#fff',
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                    }
+                }
+            }
+        }
+    });
+
+    // Existing Line Chart (keep this)
+    const dates = [...new Set(transactions.map(t => t.transaction_date))].sort();
+    const amounts = dates.map(date => transactions.filter(t => t.transaction_date === date).reduce((sum, t) => sum + t.amount, 0));
+
+    new Chart(document.getElementById('transactionsLineChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Transaction Amount',
+                data: amounts,
+                borderColor: '#3b82f6',
+                fill: false,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    ticks: {
+                        color: '#fff',
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    ticks: {
+                        color: '#fff',
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                    }
+                }
+            }
+        }
+    });
+}
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        // Redirect to prediction page
+        function redirectToPrediction() {
+            window.location.href = 'prediction.html';
+        }
+
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeString = now.toLocaleString();
+            document.getElementById('currentDateTime').textContent = dateTimeString;
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', fetchTransactions);
+    </script>
+</body>
+</html>
