@@ -59,3 +59,106 @@ A comprehensive web application for detecting and preventing money laundering th
 ```bash
 git clone https://github.com/yourusername/anti-money-laundering-webapp.git
 ```
+
+2. Install backend dependencies:
+```bash
+cd backend
+npm install
+```
+
+3. Install frontend dependencies:
+```bash
+cd frontend
+npm install
+```
+
+4. Set up MongoDB:
+- Install MongoDB
+- Create a database named 'AML'
+- Run the migration script:
+```bash
+python migrate_transactions.py
+```
+
+5. Start the servers:
+
+Backend:
+```bash
+cd backend
+npm start
+```
+
+Frontend:
+```bash
+cd frontend
+npm start
+```
+
+ML Server:
+```bash
+python predictor.py
+```
+
+## Environment Variables
+
+Create a `.env` file in the backend directory:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/AML
+JWT_SECRET=your_jwt_secret
+PORT=5000
+```
+
+## Directory Structure
+
+```
+├── admin.html
+├── index.html
+├── login.html
+├── officer.html
+├── prediction.html
+├── backend/
+│   ├── server.js
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+└── ML/
+    ├── predictor.py
+    ├── transaction_model.pkl
+    └── trained_columns.txt
+```
+
+## API Documentation
+
+### Authentication Endpoints
+- POST `/login` - User login
+- POST `/signup` - User registration
+- POST `/approve/:email` - Approve user registration
+
+### Transaction Endpoints
+- GET `/transactions` - Get all transactions
+- GET `/transaction/:id` - Get specific transaction
+- POST `/predict-laundering/:id` - Predict transaction risk
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- Chart.js for visualization
+- TailwindCSS for styling
+- MongoDB for database
+- Flask for ML API
+
+Note: Replace the image placeholder URLs (https://i.imgur.com/example1.jpg etc.) with actual screenshots of your application.
