@@ -161,4 +161,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - MongoDB for database
 - Flask for ML API
 
-Note: Replace the image placeholder URLs (https://i.imgur.com/example1.jpg etc.) with actual screenshots of your application.
